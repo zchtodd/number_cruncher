@@ -1,0 +1,15 @@
+{% extends "core/base.html" %} 
+{% load static %} 
+
+{% block title %}
+Fibonacci Calculator
+{% endblock %}
+
+{% block content %}
+<form method="post" hx-post="/fibonacci/" hx-target="#result" hx-swap="outerHTML">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Calculate Fibonacci</button>
+</form>
+<div id="result"></div>
+{% endblock %}

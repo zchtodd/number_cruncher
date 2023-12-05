@@ -1,0 +1,6 @@
+*.pyc
+__pycache__
+dev.env
+db.sqlite3
+*.swp
+*.swo

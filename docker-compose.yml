@@ -1,0 +1,64 @@
+version: '3.8'
+
+x-worker-opts: &worker-opts
+  build:
+    context: .
+    dockerfile: Dockerfile
+  volumes:
+    - ${PWD}:/usr/src/app
+  environment:
+    - CELERY_BROKER_URL=redis://redis:6379/0
+    - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    - POSTGRES_USER
+    - POSTGRES_PASSWORD
+    - POSTGRES_HOST
+    - POSTGRES_DB
+  depends_on:
+    - redis
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: number_cruncher
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ${PWD}:/usr/src/app
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_HOST
+      - POSTGRES_DB
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+
+  fibonacci-worker:
+    command: ./start_celery.sh -Q fibonacci --concurrency=1
+    <<: *worker-opts
+
+  prime-worker:
+    command: ./start_celery.sh -Q prime --concurrency=1
+    <<: *worker-opts
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+
+  database:
+    image: postgres:15
+    restart: always
+    volumes:
+      - /var/lib/postgres:/var/lib/postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_DB

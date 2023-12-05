@@ -1,0 +1,49 @@
+version: '3.8'
+
+x-worker-opts: &worker-opts
+  build:
+    context: .
+    dockerfile: Dockerfile
+  volumes:
+    - ${PWD}:/usr/src/app
+  environment:
+    - CELERY_BROKER_URL=redis://redis:6379/0
+    - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    - POSTGRES_USER
+    - POSTGRES_PASSWORD
+    - POSTGRES_HOST
+    - POSTGRES_DB
+  depends_on:
+    - redis
+
+volumes:
+  sock:
+
+services:
+  nginx:
+    image: nginx
+    restart: always
+    network_mode: "host"
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt
+      - ./nginx.prod.conf:/etc/nginx/nginx.conf
+      - ./static:/static
+      - sock:/sock
+    ports:
+      - "443:443"
+      - "80:80"
+
+  web:
+    image: number_cruncher
+    container_name: number_cruncher
+    command: gunicorn --preload --bind=unix:/sock/app.sock --workers=4 wsgi
+    volumes:
+      - sock:/sock
+
+  fibonacci-worker:
+    command: celery -A number_cruncher worker -Q fibonacci --concurrency=1 --loglevel=info
+    <<: *worker-opts
+
+  prime-worker:
+    command: celery -A number_cruncher worker -Q prime --concurrency=1 --loglevel=info
+    <<: *worker-opts

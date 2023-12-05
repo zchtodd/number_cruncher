@@ -1,0 +1,19 @@
+---
+- hosts: all
+  become: yes
+  tasks:
+    - name: Pull latest code from repository
+      git:
+        repo: 'your-repository-url'
+        dest: /usr/local/number_cruncher
+        version: main
+
+    - name: Build Docker image
+      command: docker-compose build
+      args:
+        chdir: /usr/local/number_cruncher
+
+    - name: Restart Docker containers
+      command: docker-compose up -d
+      args:
+        chdir: /usr/local/number_cruncher

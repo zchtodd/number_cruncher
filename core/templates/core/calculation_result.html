@@ -1,0 +1,13 @@
+{% if result.result %}
+    <div id="result">
+        {{ result.result }}
+    </div>
+{% else %}
+    <div id="result" 
+         hx-get="/calculation/{{ result.id }}/result/"
+         hx-trigger="load delay:2s"
+         hx-swap="outerHTML">
+        Loading...
+    </div>
+{% endif %}
+
